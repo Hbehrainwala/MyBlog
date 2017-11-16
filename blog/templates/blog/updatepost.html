@@ -1,0 +1,22 @@
+{% extends 'blog/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Update Post{% endblock %}
+{% block content %}
+<div class="col-sm-4 col-md-2 col-lg-2"></div>
+<div class="col-sm-4 col-md-8 col-lg-8">
+  <form name = "form" action = "." 
+    id="myform" method = "POST" >
+      {% csrf_token %}
+      {{ form|crispy}}
+      <input type="submit" name="submit" value="UpdatePost">
+  </form>
+</div>
+<div class="col-sm-4 col-md-2 col-lg-2"></div>
+{% endblock %}
+
+{% block page_js %}
+  <script type="text/javascript">
+    CKEDITOR.replace( 'id_description' );
+  </script>
+{% endblock %}

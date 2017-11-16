@@ -1,0 +1,121 @@
+ {% extends 'blog/base.html' %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+
+{% block title %}Create Post{% endblock %}
+
+{% block page_plugin %}
+  
+
+{% endblock %}
+
+
+{% block content %}
+  <div class="row">
+    <div class="col-sm-4 col-md-2 col-lg-2"></div>
+    <div class="col-sm-4 col-md-8 col-lg-8">
+    
+    
+      <form name = "form" action = "{% url 'blog:createpost' %}" 
+      id="myform" method = "POST" >
+        {% csrf_token %}
+        <!-- {% for hidden in form.hidden_fields %}
+          {{ hidden }}
+        {% endfor %}
+
+        {% for field in form.visible_fields %}
+          <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field|add_class:'form-control' }}
+            {% for error in field.errors %}
+              <span class="help-block">{{ error }}</span>
+            {% endfor %}
+          </div>
+        {% endfor %} -->
+        {{form|crispy}}
+
+        <input type="submit" name="submit" value="Create Post">
+      </form>
+    </div>
+    <div class="col-sm-4 col-md-2 col-lg-2"></div>
+   
+    <!-- <form name="form">
+      {% for field in form %}
+         <div class="md-form-group float-label">
+             <label>{{ field.label_tag }}</label>
+             {% render_field field class="md-input" %}
+         </div>
+
+      {% endfor %}
+      <input type="submit" name="submit" value="Create Post">
+    </form> -->
+   
+  </div>
+  {% endblock %}
+</body>
+  {% block page_js %}
+    
+    <link rel="stylesheet" href="https://jqueryvalidation.org/files/demo/site-demos.css">
+    <script src="https://cdn.jsdelivr.net/jquery.validation/1.15.0/jquery.validate.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/jquery.validation/1.15.0/additional-methods.min.js"></script>
+
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <!-- <link rel="stylesheet" href="/resources/demos/style.css"> -->
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.11.1/jquery.validate.min.js"></script>
+
+
+   
+  
+
+
+   <script type="text/javascript">
+     
+
+    CKEDITOR.replace( 'id_description' );
+      // just for the demos, avoids form submit
+      $( function() {
+        $( "#id_published" ).datepicker({minDate: 0});
+
+      });
+      // $("#myform").submit( function(e) {
+      //       var messageLength = CKEDITOR.instances['id_description'].getData().replace(/<[^>]*>/gi, '').length;
+      //       if( !messageLength ) {
+      //           alert( 'Please enter a value in texteditor' );
+      //           e.preventDefault();
+      //       }
+      //   });
+
+
+      $("#myform" ).validate({
+        rules: {
+          post: {
+            required: true,
+            // unique: true,
+          },
+          description:{
+            required: function(textarea) {
+          CKEDITOR.instances['id_description'].updateElement(); // update textarea
+          var editorcontent = id_description.value.replace(/<[^>]*>/gi, ''); // strip tags
+          return editorcontent.length === 0;
+          } 
+          }        
+        },
+        messages:{
+         post :{
+            required : "Please enter a Suitable Title",
+            // unique: "Please enter a unique title"
+         },
+         description : {
+            required : "Please enter Post Description"
+         }
+        }
+      });
+    </script>
+            
+          
+  <!-- </script> -->
+
+  
+  {% endblock %}

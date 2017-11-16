@@ -1,0 +1,24 @@
+{% extends 'blog/base.html' %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}Add Comment {% endblock %}
+  
+
+
+{% block content %}
+  <div>
+    
+    <div class="post">{{ instance.post|safe }}</div>
+    <div class="description">{{ instance.description|safe }}</div>
+    <form name = "form" action = "." id="myform" method = "POST" >
+        {% csrf_token %}
+        {{ form|crispy}}
+        <input type="submit" name="submit" value="Add Comment">
+    </form>
+  </div>
+{% endblock %}
+
+{% block page_js %}
+
+{% endblock %}

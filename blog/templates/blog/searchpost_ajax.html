@@ -1,0 +1,50 @@
+{% for post in latest_posts %}
+  <div class="post">
+      <div class="postmain">
+        <a href="{% url 'blog:viewpost' post.id%}">{{ post.post|safe }}</a>
+      </div>
+      <div class="descriptionsearch">
+        {{ post.description|safe|slice:"200"}}....
+      </div>
+  </div>
+  <br>
+{% endfor %}
+
+<div class="row">
+  {% if latest_posts.has_other_pages %}
+    <nav aria-label="Page navigation">
+      <ul class="pagination">
+        {% if latest_posts.has_previous %}
+          <li class="searchpost_pagination">
+            <a href="javascript:void(0);" data-href="?page={{ latest_posts.previous_page_number }}" aria-label="Previous">
+              <span aria-hidden="true">&laquo;</span>
+            </a>
+          </li>
+        {% else %}
+        {% endif %}
+
+        {% for i in latest_posts.paginator.page_range %}
+          {% if latest_posts.number == i %}
+            <li class="active searchpost_pagination">
+              <a href="javascript:void(0);" data-href="?page={{ i }}">{{ i }}</a>
+            </li>
+          {% else %}
+            <li class="searchpost_pagination">
+              <a href="javascript:void(0);" data-href="?page={{ i }}">{{ i }}</a>
+            </li>
+          {% endif %}
+        {% endfor %}
+
+        {% if latest_posts.has_next %}
+          <li class="searchpost_pagination">
+            <a href="javascript:void(0);" data-href="?page={{ latest_posts.next_page_number }}" aria-label="Next">
+              <span aria-hidden="true">&raquo;</span>
+            </a>
+          </li>
+        {% else %}
+          <!-- <span>&raquo;</span> -->
+        {% endif %}
+      </ul>
+    </nav>
+  {% endif %}
+</div>  

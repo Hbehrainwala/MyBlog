@@ -1,0 +1,27 @@
+{% extends 'blog/base.html' %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}Notify For User {% endblock %}
+  
+
+
+{% block content %}
+  <div>
+    
+    <div class="post">
+    {{ request.user.username|safe }}
+    <p>For getting Notifications for comments on your Post </p>
+    <p>Tick the Check box Below - </p>
+    </div>
+    <form name = "form" action = "." id="myform" method = "POST" >
+        {% csrf_token %}
+        {{ form|crispy}}
+        <input type="submit" name="submit" value="Submit">
+    </form>
+  </div>
+{% endblock %}
+
+{% block page_js %}
+
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends 'blog/base.html' %}
+
+{% block title %}Searched Post{% endblock %}
+
+{% block content %}
+
+<!-- {% if messages.tags %}
+    {% for message in messages %}
+      <div{% if message %} class="alert alert-{{ message.tags }}"{% endif %}>
+        <a class="close" data-dismiss="alert" href="{% url 'blog:index'%}">&times;</a>
+        {{ message }}
+      </div>
+    {% endfor %}
+{% endif %}
+ -->
+
+
+<div id="searchpost">
+  {% if latest_posts %}
+    {% for post in latest_posts %}
+      <div class="post">
+        <div class="postmain">
+          <a href="{% url 'blog:viewpost' post.id%}">{{ post.post|safe }}</a>
+        </div>
+        <div class="descriptionsearch">
+          {{ post.description|safe|slice:"200"}}....
+        </div>
+      </div>
+      <br>
+      
+    {% endfor %}
+   
+
+
+    <div class="row">
+      {% if latest_posts.has_other_pages %}
+        <nav aria-label="Page navigation">
+          <ul class="pagination">
+            {% if latest_posts.has_previous %}
+              <li class="searchpost_pagination">
+                <a href="javascript:void(0);" data-href="?page={{ latest_posts.previous_page_number }}" aria-label="Previous">
+                  <span aria-hidden="true">&laquo;</span>
+                </a>
+              </li>
+            {% else %}
+            {% endif %}
+
+            {% for i in latest_posts.paginator.page_range %}
+              {% if latest_posts.number == i %}
+                <li class="active searchpost_pagination">
+                  <a href="javascript:void(0);" data-href="?page={{ i }}">{{ i }}</a>
+                </li>
+              {% else %}
+                <li class="searchpost_pagination">
+                  <a href="javascript:void(0);" data-href="?page={{ i }}">{{ i }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+
+            {% if latest_posts.has_next %}
+              <li class="searchpost_pagination">
+                <a href="javascript:void(0);" data-href="?page={{ i }}" aria-label="Next">
+                  <span aria-hidden="true">&raquo;</span>
+
+
+                </a>
+              </li>
+            {% else %}
+              <span>&raquo;</span>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+    </div>
+  {% else %}
+    <div class="post">No Searched Post Available</div>
+  {% endif %}  
+</div> 
+  
+{% endblock %}
+

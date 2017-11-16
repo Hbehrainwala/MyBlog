@@ -1,0 +1,95 @@
+{% extends 'blog/base.html' %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}View Post {% endblock %}
+  
+
+
+{% block content %}
+<div class="name"> <b>{{post.user}}</b> </div>
+  <div>
+    <div class="post">{{ post.post|safe }}</div><br>
+    <div class="description">{{ post.description|safe }}</div>
+  </div>
+  <button type="button" class="btn btn-primary like-btn bt" id="like" data-post_id="{{post.id}}"><span class="glyphicon glyphicon-thumbs-up " ></span>{{post.likes}} Like</button>  
+    <a href="{% url 'blog:createcomment' post.slug %}"><span class="glyphicon glyphicon-comment"></span> Comment</a>
+  
+    
+     <br>
+    {% if comments %}
+      <div class="infinite-container">
+      {% for comment in comments %}
+      
+        <div class="comment">
+        <div class="name">
+        {{comment.author}}
+        </div>
+        {{ comment.comment }}
+        <br>
+        <button type="button" class="btn btn-primary like-btn_comment bt" id="like" data-comment_id="{{comment.id}}"><span class="glyphicon glyphicon-thumbs-up " ></span>{{comment.likes}} Like</button>
+        </div>
+        <br>
+      {% endfor %}
+      </div>
+
+      {% if comments.has_next %}
+        <a class="infinite-more-link" href="?page={{ comments.next_page_number }}">More</a>
+      {% endif %}
+
+      <div class="loading" style="display: none;">
+      Loading...
+      </div>
+    {% else %}
+      <div class="comment">No Comments Posted Yet.</div>
+    {% endif %}
+{% endblock %}
+
+{% block page_js %}
+
+<script type="text/javascript">
+    var current_obj = false;
+    $(document).on('click', '.like-btn', function(e){
+      e.preventDefault();
+      
+      var post_id = $(this).data('post_id');
+      current_obj = $(this);
+      $.ajax({
+        type: "GET",
+
+        url: 'likepost/',
+        // data : {'post_id' : parseInt(post_id)},
+        success:function(response) {
+          current_obj.html("<span class='glyphicon glyphicon-thumbs-up'></span>"+response.likes+" Likes")
+          swal(response.message)  
+        },
+        error:function(response) {
+        
+        }
+      });
+    })
+
+    $(document).on('click', '.like-btn_comment', function(e){
+      e.preventDefault();
+      
+      var comment_id = $(this).data('comment_id');
+      current_obj = $(this);
+      $.ajax({
+        type: "GET",
+
+        url: 'likecomment/'+comment_id+'',
+        // data : {'post_id' : parseInt(post_id)},
+        success:function(response) {
+          current_obj.html("<span class='glyphicon glyphicon-thumbs-up'></span>"+response.likes+" Likes")
+          swal(response.message)  
+        },
+        error:function(response) {
+        
+        }
+      });
+    })
+
+   
+</script>
+
+{% endblock %}
