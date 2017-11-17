@@ -100,4 +100,5 @@ ENV/
 
 # mypy
 .mypy_cache/
->>>>>>> 6672c6b56182e334288dcfbd600fad62668a70b9
+
+db.sqlite36
