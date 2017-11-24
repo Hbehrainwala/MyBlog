@@ -2,6 +2,11 @@ import datetime
 import json
 from datetime import date
 
+from django.views import View
+from django.views.generic.detail import DetailView
+from django.views.generic.list import ListView
+from django.views.generic.edit import UpdateView, DeleteView, FormView
+
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404, Http404
 from django.http import HttpResponse, HttpResponseRedirect
@@ -19,130 +24,127 @@ from django.core.mail import EmailMessage
 from django.core import serializers
 from django.template.loader import render_to_string
 from django.shortcuts import render_to_response
+from django.core.exceptions import PermissionDenied
+from django.core.urlresolvers import reverse_lazy
 
 from .models import Post, Profile, Comment, PostLike, CommentLike, Search
 from .forms import CreatePostForm, UpdateUserForm, UpdatePostForm, CommentForm, \
 NotificationForm, SearchForm
-
-
-def index(request):
-  
-    latest_posts=Post.objects.filter(publish=True, published__lte=datetime.datetime.now(), archive=False).order_by('-published')
-    paginator = Paginator(latest_posts, 3)
-    page = request.GET.get('page')
-  
-    try:
-        latest_posts = paginator.page(page)
-    except PageNotAnInteger:
-        latest_posts = paginator.page(1)
-    except EmptyPage:
-        latest_posts = paginator.page(paginator.num_pages)
+from .mixins import PaginationMixin
 
   
-    latest_posts_likes=Post.objects.filter(publish=True, published__lte=datetime.datetime.now(), archive=False).order_by('-likes')
-    paginator = Paginator(latest_posts_likes, 3)
-    page = request.GET.get('page')
-  
-    try:
-        latest_posts_likes = paginator.page(page)
-    except PageNotAnInteger:
-        latest_posts_likes = paginator.page(1)
-    except EmptyPage:
-        latest_posts_likes = paginator.page(paginator.num_pages)
+class IndexView(ListView):
+    model = Post
+    template_name = 'blog/homepage.html'
+    form_class = SearchForm
 
-    latest_posts_views=Post.objects.filter(publish=True, published__lte=datetime.datetime.now(), archive=False).order_by('-views')
-    paginator = Paginator(latest_posts_views, 3)
-    page = request.GET.get('page')
-  
-    try:
-        latest_posts_views = paginator.page(page)
-    except PageNotAnInteger:
-        latest_posts_views = paginator.page(1)
-    except EmptyPage:
-        latest_posts_views = paginator.page(paginator.num_pages)
+    def get_context_data(self, **kwargs):
+        context = super(IndexView, self).get_context_data(**kwargs)
+        
+        context['latest_posts'] = Post.objects.filter(publish=True, published__lte=datetime.datetime.now(), archive=False).order_by('-published')
+        paginator = Paginator(context['latest_posts'], 3)
+        page = self.request.GET.get('page')
+      
+        try:
+            context['latest_posts'] = paginator.page(page)
+        except PageNotAnInteger:
+            context['latest_posts'] = paginator.page(1)
+        except EmptyPage:
+            context['latest_posts'] = paginator.page(paginator.num_pages)
 
-    searchform = SearchForm() 
-    return render(request, 'blog/homepage.html', {
-        'searchform':searchform, 
-        'latest_posts' : latest_posts, 
-        'latest_posts_likes':latest_posts_likes, 
-        'latest_posts_views':latest_posts_views
-        })
-  
-  
+        context['latest_posts_likes']=Post.objects.filter(publish=True, published__lte=datetime.datetime.now(), archive=False).order_by('-likes')
+        paginator = Paginator(context['latest_posts_likes'], 3)
+        page = self.request.GET.get('page')
+      
+        try:
+            context['latest_posts_likes'] = paginator.page(page)
+        except PageNotAnInteger:
+            context['latest_posts_likes'] = paginator.page(1)
+        except EmptyPage:
+            context['latest_posts_likes'] = paginator.page(paginator.num_pages)
 
-@login_required
-def create_post_view(request):
-    if request.method == 'POST':
-        form = CreatePostForm(request.POST)
+
+        context['latest_posts_views']=Post.objects.filter(publish=True, published__lte=datetime.datetime.now(), archive=False).order_by('-views')
+        paginator = Paginator(context['latest_posts_views'], 3)
+        page = self.request.GET.get('page')
+      
+        try:
+            context['latest_posts_views'] = paginator.page(page)
+        except PageNotAnInteger:
+            context['latest_posts_views'] = paginator.page(1)
+        except EmptyPage:
+            context['latest_posts_views'] = paginator.page(paginator.num_pages)
+
+        context['searchform'] = self.form_class
+        return context
+
+
+class CreatePostView(View):
+    form_class = CreatePostForm
+    template_name = 'blog/createpost.html'
+
+
+    def get(self, request):
+        form = self.form_class()
+        searchform = SearchForm()
+        return render(request, self.template_name, {
+            "form" : form, 
+            "searchform" : searchform 
+            })
+
+    def post(self, request):
+        form = self.form_class(request.POST)
+        searchform = SearchForm()
         if form.is_valid():
             f=form.save()
             f.user = request.user
             f.save()
-            return HttpResponseRedirect(reverse('blog:index'))
-    else:
-        form = CreatePostForm()
-        searchform = SearchForm()
-        return render(request, 'blog/createpost.html', {
+            return HttpResponseRedirect(reverse('blog:success'))
+
+        return render(request, self.template_name, {
             "form" : form, 
             "searchform" : searchform 
             })
 
 
-@login_required
-def user_update_view(request):
-    instance = get_object_or_404(User, id=request.user.id)
-    if request.method == 'POST':
-        form = UpdateUserForm(data=request.POST, instance=request.user)
-        if form.is_valid():
-            f = form.save()
-            return HttpResponseRedirect(reverse('blog:index'))
+class UserUpdateView(UpdateView):
+    form_class = UpdateUserForm
+    template_name = 'blog/updateinfo.html'
+    success_url = reverse_lazy('blog:index') 
 
-    else:
-        searchform = SearchForm()
-        form = UpdateUserForm(instance=instance)
-        return render(request, 'blog/updateinfo.html', {
-            "form" : form, 
-            "searchform" : searchform
-            })
-
-
-@login_required
-def my_post_view(request):
-    if request.user.profile.blogger:
-        cur_date = timezone.now
-        latest_posts =request.user.post_set.filter(archive=False).order_by('-created')
-        page = request.GET.get('page', 1)
+    def get_object(self):
+        return User.objects.get(id=self.request.user.id)
 
 
 
-        paginator = Paginator(latest_posts, 3)
-        try:
-            latest_posts = paginator.page(page)
-        except PageNotAnInteger:
-            latest_posts = paginator.page(1)
-        except EmptyPage:
-            latest_posts = paginator.page(paginator.num_pages)
-        return render(request, 'blog/mypost.html', {'latest_posts' : latest_posts,'cur_date':cur_date})
+class MyPostView(PaginationMixin, ListView):
+    template_name = 'blog/mypost.html'
 
-    else:
-        return HttpResponseRedirect(reverse('blog:index'))
+    def get_context_data(self, **kwargs):
+        context = super(MyPostView, self).get_context_data(**kwargs)
+        context['cur_date'] = timezone.now
+        context['title'] = 'MyPost'
+        return context
 
-@login_required
-def update_post_view(request,slug):
-    if request.user.profile.blogger:
-        instance = get_object_or_404(Post, slug=slug)
-        if request.method == 'POST':
-            form = UpdatePostForm(request.POST, instance=instance)
-            if form.is_valid():
-                f = form.save()
-                return HttpResponseRedirect(reverse('blog:mypost'))
+    def get_queryset(self):
+        return self.request.user.post_set.filter(archive=False).order_by('-created')
 
-        else:
-            form = UpdatePostForm(instance=instance)
-            return render(request, 'blog/updatepost.html', {"form" : form})
-    else:
-        return HttpResponseRedirect(reverse('blog:index'))
+
+
+class UpdatePostView(UpdateView):
+    form_class = UpdatePostForm
+    template_name = 'blog/updatepost.html'
+    success_url = reverse_lazy('blog:mypost')
+
+    def get_object(self, queryset=None):
+        return Post.objects.get(slug=self.kwargs['slug'])
+
+    def dispatch(self, request, *args, **kwargs):
+        self.obj = self.get_object()
+        if self.obj.user != request.user:
+            raise PermissionDenied
+        return super(UpdatePostView, self).dispatch(request, *args, **kwargs)
+
 
 @login_required
 def delete_post_view(request,c_id):
@@ -150,20 +152,30 @@ def delete_post_view(request,c_id):
     post.delete()
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
-@login_required
-def publish_post_view(request,c_id):
-    post = get_object_or_404(Post,id=c_id)
-    post.publish = True
-    post.published = timezone.now() 
-    post.save()
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+class DeletePostView(DeleteView):
+    models = Post
+    success_url = reverse_lazy('blog:mypost') 
 
-@login_required
-def unpublish_post_view(request,c_id):
-    post = get_object_or_404(Post, id = c_id)
-    post.publish = False 
-    post.save()
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+    def get_object(self):
+        return Post.objects.get(slug=self.kwargs['slug'])
+
+
+class MakePostPublishView(View):
+    def get(self, request, *args, **kwargs):
+        post = get_object_or_404(Post, slug=kwargs['slug'])
+        post.publish = True
+        post.published = timezone.now() 
+        post.save()
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+
+class MakePostUnpublishView(View):
+    def get(self, request, *args, **kwargs):
+        post = get_object_or_404(Post, slug=kwargs['slug'])
+        post.publish = False
+        post.save()
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
   
 @login_required
 def create_comment_view(request, slug):
@@ -231,20 +243,6 @@ def like_comment_view(request, slug,c_id):
 
 
 
-# def show_all_comments_view(request,c_id):
-#   post = get_object_or_404(Post, id=c_id)
-#   latest_comment=post.comment_set.all()
-#   paginator = Paginator(latest_comment, 5)
-#   page = request.GET.get('page')
-  
-#   try:
-#     latest_comment = paginator.page(page)
-#   except PageNotAnInteger:
-#     latest_comment = paginator.page(1)
-#   except EmptyPage:
-#     latest_comment = paginator.page(paginator.num_pages)
-
-#   return render(request, 'blog/showallcomment.html', { 'latest_comment' : latest_comment,'post':post})
  
 def comments_on_my_post_view(request,slug):
     post = get_object_or_404(Post, slug = slug)
@@ -261,86 +259,91 @@ def comments_on_my_post_view(request,slug):
 
     return render(request, 'blog/mypostcomment.html', { 'latest_comment' : latest_comment,'post':post})
 
+#TODO
+class CommentOnMyPostView(ListView):
+    pass
+
+
+
 def delete_comment_view(request,c_id):
     comment = get_object_or_404(Comment, id=c_id)
     comment.delete()
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
-def my_publish_post_view(request):
-    if request.user.profile.blogger:
-        cur_date = timezone.now
-        latest_posts =request.user.post_set.filter(publish = True,published__lte=datetime.datetime.now(),archive=False).order_by('-created')
-        page = request.GET.get('page', 1)
-        paginator = Paginator(latest_posts, 5)
+
+class MyPublishPostView(PaginationMixin, ListView):
+    template_name = 'blog/mypost.html'
+
+    def get_queryset(self):
+        return self.request.user.post_set.filter(
+            publish = True, 
+            published__lte=datetime.datetime.now(), 
+            archive=False
+            ).order_by('-created')
+
+    def get_context_data(self, **kwargs):
+        context = super(MyPublishPostView, self).get_context_data(**kwargs)
+        context['cur_date'] = timezone.now
+        context['title'] = 'MyPublishPost'
+        return context
+
+
+class MyUnPublishPostView(PaginationMixin, ListView):
+    template_name = 'blog/mypost.html'
+
+    def get_queryset(self):
+        return self.request.user.post_set.filter(
+            Q(archive=False),
+            Q(publish = False)|Q(published__gte = datetime.datetime.now())
+            ).order_by('-created')
+
+    def get_context_data(self, **kwargs):
+        context = super(MyUnPublishPostView, self).get_context_data(**kwargs)
+        context['cur_date'] = timezone.now
+        context['title'] = 'MyUnPublishPost'
+        return context
+
+
+class MyArchivePostView(PaginationMixin, ListView):
+    template_name = 'blog/myarchivepost.html'
+
+    def get_queryset(self):
+        return self.request.user.post_set.filter(archive = True).order_by('-archive_date')
+
+    def get_context_data(self, **kwargs):
+        context = super(MyArchivePostView, self).get_context_data(**kwargs)
+        context['cur_date'] = timezone.now
+        context['title'] = 'MyArchivePost'
+        return context
+
+
+class MakePostArchieveView(View):
+    def get(self, request, *args, **kwargs):
+        post = get_object_or_404(Post,slug = kwargs['slug'])
+        post.archive = True
+        post.archive_date = timezone.now()
+        post.save() 
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))        
+
+class ShowPostView(DetailView):
+    template_name = 'blog/viewpost.html'
+    model = Post
+
+    def get_context_data(self, **kwargs):
+        context = super(ShowPostView, self).get_context_data(**kwargs)
+        self.object.views += 1
+        self.object.save()
+        context['comments'] = self.object.comment_set.all()
+        page = self.request.GET.get('page', 1)
+        paginator = Paginator(context['comments'], 3)
         try:
-            latest_posts = paginator.page(page)
+            context['comments'] = paginator.page(page)
         except PageNotAnInteger:
-            latest_posts = paginator.page(1)
+            context['comments'] = paginator.page(1)
         except EmptyPage:
-            latest_posts = paginator.page(paginator.num_pages)
-        return render(request, 'blog/mypublishpost.html', {'latest_posts' : latest_posts})
-    else:
-        return HttpResponseRedirect(reverse('blog:index'))
+            context['comments'] = paginator.page(paginator.num_pages)
 
-
-def my_unpublish_post_view(request):
-    if request.user.profile.blogger:
-        cur_date = timezone.now
-        latest_posts =request.user.post_set.filter(Q(archive=False),Q(publish = False)|Q(published__gte = datetime.datetime.now())).order_by('-created')
-        page = request.GET.get('page', 1)
-
-        paginator = Paginator(latest_posts, 5)
-        try:
-            latest_posts = paginator.page(page)
-        except PageNotAnInteger:
-            latest_posts = paginator.page(1)
-        except EmptyPage:
-            latest_posts = paginator.page(paginator.num_pages)
-        return render(request, 'blog/myunpublishpost.html', {'latest_posts' : latest_posts,'cur_date':cur_date})
-
-    else:
-        return HttpResponseRedirect(reverse('blog:index'))
-
-
-def my_archive_post_view(request):
-    if request.user.profile.blogger:
-        cur_date = timezone.now
-        latest_posts =request.user.post_set.filter(archive = True).order_by('-archive_date')
-        page = request.GET.get('page', 1)
-
-        paginator = Paginator(latest_posts, 5)
-        try:
-            latest_posts = paginator.page(page)
-        except PageNotAnInteger:
-            latest_posts = paginator.page(1)
-        except EmptyPage:
-            latest_posts = paginator.page(paginator.num_pages)
-        return render(request, 'blog/myarchivepost.html', {'latest_posts' : latest_posts,'cur_date':cur_date})
-
-    else:
-        return HttpResponseRedirect(reverse('blog:index'))
-
-def archive_post_view(request,slug):
-    post = get_object_or_404(Post,slug = slug)
-    post.archive = True
-    post.archive_date = timezone.now
-    post.save() 
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
-
-def view_post_view(request,slug):
-    post = get_object_or_404(Post, slug = slug)
-    post.views = post.views + 1
-    post.save()
-    comments = post.comment_set.all()
-    page = request.GET.get('page', 1)
-    paginator = Paginator(comments, 3)
-    try:
-        comments = paginator.page(page)
-    except PageNotAnInteger:
-        comments = paginator.page(1)
-    except EmptyPage:
-        comments = paginator.page(paginator.num_pages)
-    return render(request, 'blog/viewpost.html', {'post':post,'comments':comments})
+        return context
 
 # def most_viewed_post_view(request):
 #   latest_posts=Post.objects.filter(publish=True, published__lte=datetime.datetime.now(), archive=False).order_by('-views')
@@ -384,20 +387,28 @@ def become_blogger_view(request):
         email.send()
         return HttpResponseRedirect(reverse('blog:index'))
 
-def notifications_view(request):
-    user = User.objects.get(id=request.user.id)
-    if request.method == "POST":
-        form = NotificationForm(request.POST, instance=request.user)
-        if form.is_valid():
-            f = form.save()
-            f.profile.notify = True
-            f.profile.save()
-            return HttpResponseRedirect(reverse('blog:index'))
+# def notifications_view(request):
+#     user = User.objects.get(id=request.user.id)
+#     if request.method == "POST":
+#         form = NotificationForm(request.POST, instance=request.user)
+#         if form.is_valid():
+#             f = form.save()
+#             f.profile.notify = True
+#             f.profile.save()
+#             return HttpResponseRedirect(reverse('blog:index'))
     
-    else:
-        form = NotificationForm() 
-        return render(request, 'blog/notifyuser.html', {'form':form})
+#     else:
+#         form = NotificationForm() 
+#         return render(request, 'blog/notifyuser.html', {'form':form})
   
+class NotificationView(UpdateView):
+    form_class = NotificationForm
+    template_name = 'blog/notifyuser.html'
+    success_url = reverse_lazy('blog:index')
+
+    def get_object(self, queryset=None):
+        return Profile.objects.get(user=self.request.user)
+
 
 def ajax_upper_paginate_view(request):
     latest_posts = Post.objects.filter(publish=True, published__lte=datetime.datetime.now(), archive=False).order_by('-published')
@@ -528,3 +539,17 @@ def search_post_ajax_view(request):
 #       latest_posts = paginator.page(paginator.num_pages)
 #   return render(request, 'blog/searchpost.html', {'latest_posts': latest_posts})
 #   
+# def show_all_comments_view(request,c_id):
+#   post = get_object_or_404(Post, id=c_id)
+#   latest_comment=post.comment_set.all()
+#   paginator = Paginator(latest_comment, 5)
+#   page = request.GET.get('page')
+  
+#   try:
+#     latest_comment = paginator.page(page)
+#   except PageNotAnInteger:
+#     latest_comment = paginator.page(1)
+#   except EmptyPage:
+#     latest_comment = paginator.page(paginator.num_pages)
+
+#   return render(request, 'blog/showallcomment.html', { 'latest_comment' : latest_comment,'post':post})

@@ -7,6 +7,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 from ckeditor.fields import RichTextField
 from django.template.defaultfilters import slugify
+from django.urls import reverse
 
 
 class Profile(models.Model):
@@ -49,6 +50,9 @@ class Post(models.Model):
         if not self.id:
             self.slug = slugify(self.post) #Or whatever you want the slug to use
         super(Post, self).save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse('blog:viewpost', kwargs = {'slug' : self.slug})
 
 
 class Comment(models.Model):

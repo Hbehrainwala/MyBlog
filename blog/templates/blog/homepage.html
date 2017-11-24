@@ -5,270 +5,227 @@
 
 {% block title %}Blogs{% endblock %}
 
-
-
 {% block content %}
 
-
-
-
-<div id="latest_posts">
-  <div class="row" >
-    <div class="col-md-12">
-      <h4>New Feeds</h4><hr>
-    </div>
-
-    <div class="row" >
-      {% for post in latest_posts %}
-        <div class="col-sm-4 col-md-4 col-lg-4" >
-          <div class="post">
-            <div class="postmain">
-              <a href="{% url 'blog:viewpost' post.slug %}">{{ post.post|safe }}</a>
+    <div id="latest_posts">
+        <div class="row" >
+            <div class="col-md-12">
+                <h4>New Feeds</h4><hr>
             </div>
-            <div class="description">
-              {{ post.description|safe|slice:"200"}}....
+            <div class="row" >
+                {% for post in latest_posts %}
+                    <div class="col-sm-4 col-md-4 col-lg-4" >
+                        <div class="post">
+                            <div class="postmain">
+                                <a href="{{ post.get_absolute_url }}">{{ post.post|safe}}</a>
+                            </div>
+                            <div class="description">
+                                {{ post.description|safe|slice:"200"}}....
+                            </div>
+                            <strong>views - {{post.views}}</strong>
+                        </div>
+                        Written by <strong>{{ post.user}}</strong> at {{post.created}}
+                    </div>
+                {% endfor %}
             </div>
-            <strong>views - {{post.views}}</strong>
-          </div>
-          Written by <strong>{{ post.user}}</strong> at {{post.created}}
         </div>
-      {% endfor %}
-    </div>
-  </div>
 
-  <div class="row">
-    {% if latest_posts.has_other_pages %}
-      <nav aria-label="Page navigation">
-        <ul class="pagination">
-          {% if latest_posts.has_previous %}
-            <li class="blog_pagination_upper">
-              <a href="javascript:void(0);" data-href="?page={{ latest_posts.previous_page_number }}" aria-label="Previous">
-                <span aria-hidden="true">&laquo;</span>
-              </a>
-            </li>
-          {% else %}
-          {% endif %}
+        <div class="row">
+            {% if latest_posts.has_other_pages %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination">
+                        {% if latest_posts.has_previous %}
+                            <li class="blog_pagination_upper">
+                                <a href="javascript:void(0);" data-href="?page={{ latest_posts.previous_page_number }}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                        {% endif %}
 
-          {% for i in latest_posts.paginator.page_range %}
-            {% if latest_posts.number == i %}
-              <li class="active blog_pagination_upper">
-                <a href="javascript:void(0);" data-href="?page={{ i }}">{{ i }}</a>
-              </li>
-            {% else %}
-              <li class="blog_pagination_upper">
-                <a href="javascript:void(0);" data-href="?page={{ i }}">{{ i }}</a>
-              </li>
+                        {% for i in latest_posts.paginator.page_range %}
+                            {% if latest_posts.number == i %}
+                                <li class="active blog_pagination_upper">
+                                    <a href="javascript:void(0);" data-href="?page={{ i }}">{{ i }}</a>
+                                </li>
+                            {% else %}
+                                <li class="blog_pagination_upper">
+                                    <a href="javascript:void(0);" data-href="?page={{ i }}">{{ i }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if latest_posts.has_next %}
+                            <li class="blog_pagination_upper">
+                                <a href="javascript:void(0);" data-href="?page={{ i }}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <span>&raquo;</span>
+                        {% endif %}
+                    </ul>
+                </nav>
             {% endif %}
-          {% endfor %}
-
-          {% if latest_posts.has_next %}
-            <li class="blog_pagination_upper">
-              <a href="javascript:void(0);" data-href="?page={{ i }}" aria-label="Next">
-                <span aria-hidden="true">&raquo;</span>
-
-
-              </a>
-            </li>
-          {% else %}
-            <span>&raquo;</span>
-          {% endif %}
-        </ul>
-      </nav>
-    {% endif %}
-  </div> 
-</div>
-
-
-<div id="latest_postss">
-  <div class="row" >
-    <div class="col-md-12">
-      <h4>Most Liked</h4><hr>
+        </div> 
     </div>
 
-    <div class="row" >
-      {% for post in latest_posts_likes %}
-        <div class="col-sm-4 col-md-4 col-lg-4" >
-          <div class="post">
-            <div class="postmain">
-              <a href="{% url 'blog:viewpost' post.slug %}">{{ post.post|safe }}</a>
+
+    <div id="latest_postss">
+        <div class="row" >
+            <div class="col-md-12">
+                <h4>Most Liked</h4><hr>
             </div>
-            <div class="description">
-              {{ post.description|safe|slice:"200"}}....
+
+            <div class="row" >
+                {% for post in latest_posts_likes %}
+                    <div class="col-sm-4 col-md-4 col-lg-4" >
+                        <div class="post">
+                            <div class="postmain">
+                                <a href="{{ post.get_absolute_url }}">{{ post.post|safe}}</a>
+                            </div>
+                            <div class="description">
+                                {{ post.description|safe|slice:"200"}}....
+                            </div>
+                            <strong>views - {{post.views}}</strong>
+                        </div>
+                        Written by <strong>{{ post.user}}</strong> at {{post.created}}
+                    </div>
+                {% endfor %}
             </div>
-            <strong>views - {{post.views}}</strong>
-          </div>
-          Written by <strong>{{ post.user}}</strong> at {{post.created}}
         </div>
-      {% endfor %}
-    </div>
-  </div>
 
-  <div class="row">
-    {% if latest_posts_likes.has_other_pages %}
-      <nav aria-label="Page navigation">
-        <ul class="pagination">
-          {% if latest_posts_likes.has_previous %}
-            <li class="blog_pagination_middle">
-              <a href="javascript:void(0);" data-href="?page={{ latest_posts_likes.previous_page_number }}" aria-label="Previous">
-                <span aria-hidden="true">&laquo;</span>
-              </a>
-            </li>
-          {% else %}
-          {% endif %}
+        <div class="row">
+            {% if latest_posts_likes.has_other_pages %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination">
+                        {% if latest_posts_likes.has_previous %}
+                            <li class="blog_pagination_middle">
+                                <a href="javascript:void(0);" data-href="?page={{ latest_posts_likes.previous_page_number }}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                        {% endif %}
 
-          {% for i in latest_posts_likes.paginator.page_range %}
-            {% if latest_posts_likes.number == i %}
-              <li class="active blog_pagination_middle">
-                <a href="javascript:void(0);" data-href="?page={{ i }}">{{ i }}</a>
-              </li>
-            {% else %}
-              <li class="blog_pagination_middle">
-                <a href="javascript:void(0);" data-href="?page={{ i }}">{{ i }}</a>
-              </li>
+                        {% for i in latest_posts_likes.paginator.page_range %}
+                            {% if latest_posts_likes.number == i %}
+                                <li class="active blog_pagination_middle">
+                                    <a href="javascript:void(0);" data-href="?page={{ i }}">{{ i }}</a>
+                                </li>
+                            {% else %}
+                                <li class="blog_pagination_middle">
+                                    <a href="javascript:void(0);" data-href="?page={{ i }}">{{ i }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if latest_posts_likes.has_next %}
+                            <li class="blog_pagination_middle">
+                                <a href="javascript:void(0);" data-href="?page={{ i }}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <span>&raquo;</span>
+                        {% endif %}
+                    </ul>
+                </nav>
             {% endif %}
-          {% endfor %}
-
-          {% if latest_posts_likes.has_next %}
-            <li class="blog_pagination_middle">
-              <a href="javascript:void(0);" data-href="?page={{ i }}" aria-label="Next">
-                <span aria-hidden="true">&raquo;</span>
-
-
-              </a>
-            </li>
-          {% else %}
-            <span>&raquo;</span>
-          {% endif %}
-        </ul>
-      </nav>
-    {% endif %}
-  </div> 
-</div>
-
-<div id="latest_postsss">
-  <div class="row" >
-    <div class="col-md-12">
-      <h4>Most Viewed</h4><hr>
+        </div> 
     </div>
 
-    <div class="row" >
-      {% for post in latest_posts_views %}
-        <div class="col-sm-4 col-md-4 col-lg-4" >
-          <div class="post">
-            <div class="postmain">
-              <a href="{% url 'blog:viewpost' post.slug%}">{{ post.post|safe }}</a>
+    <div id="latest_postsss">
+        <div class="row" >
+            <div class="col-md-12">
+                <h4>Most Viewed</h4><hr>
             </div>
-            <div class="description">
-              {{ post.description|safe|slice:"200"}}....
+
+            <div class="row" >
+                {% for post in latest_posts_views %}
+                    <div class="col-sm-4 col-md-4 col-lg-4" >
+                        <div class="post">
+                            <div class="postmain">
+                                <a href="{{ post.get_absolute_url }}">{{ post.post|safe}}</a>
+                            </div>
+                            <div class="description">
+                                {{ post.description|safe|slice:"200"}}....
+                            </div>
+                            <strong>views - {{post.views}}</strong>
+                        </div>
+                        Written by <strong>{{ post.user}}</strong> at {{post.created}}
+                    </div>
+                {% endfor %}
             </div>
-            <strong>views - {{post.views}}</strong>
-          </div>
-          Written by <strong>{{ post.user}}</strong> at {{post.created}}
         </div>
-      {% endfor %}
-    </div>
-  </div>
 
-  <div class="row">
-    {% if latest_posts_views.has_other_pages %}
-      <nav aria-label="Page navigation">
-        <ul class="pagination">
-          {% if latest_posts_views.has_previous %}
-            <li class="blog_pagination_lower">
-              <a href="javascript:void(0);" data-href="?page={{ latest_posts_views.previous_page_number }}" aria-label="Previous">
-                <span aria-hidden="true">&laquo;</span>
-              </a>
-            </li>
-          {% else %}
-          {% endif %}
+        <div class="row">
+            {% if latest_posts_views.has_other_pages %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination">
+                        {% if latest_posts_views.has_previous %}
+                            <li class="blog_pagination_lower">
+                                <a href="javascript:void(0);" data-href="?page={{ latest_posts_views.previous_page_number }}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                        {% endif %}
 
-          {% for i in latest_posts_views.paginator.page_range %}
-            {% if latest_posts_views.number == i %}
-              <li class="active blog_pagination_lower">
-                <a href="javascript:void(0);" data-href="?page={{ i }}">{{ i }}</a>
-              </li>
-            {% else %}
-              <li class="blog_pagination_lower">
-                <a href="javascript:void(0);" data-href="?page={{ i }}">{{ i }}</a>
-              </li>
+                        {% for i in latest_posts_views.paginator.page_range %}
+                            {% if latest_posts_views.number == i %}
+                                <li class="active blog_pagination_lower">
+                                    <a href="javascript:void(0);" data-href="?page={{ i }}">{{ i }}</a>
+                                </li>
+                            {% else %}
+                                <li class="blog_pagination_lower">
+                                    <a href="javascript:void(0);" data-href="?page={{ i }}">{{ i }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if latest_posts_views.has_next %}
+                            <li class="blog_pagination_lower">
+                                <a href="javascript:void(0);" data-href="?page={{ i }}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <span>&raquo;</span>
+                        {% endif %}
+                    </ul>
+                </nav>
             {% endif %}
-          {% endfor %}
-
-          {% if latest_posts_views.has_next %}
-            <li class="blog_pagination_lower">
-              <a href="javascript:void(0);" data-href="?page={{ i }}" aria-label="Next">
-                <span aria-hidden="true">&raquo;</span>
-
-
-              </a>
-            </li>
-          {% else %}
-            <span>&raquo;</span>
-          {% endif %}
-        </ul>
-      </nav>
-    {% endif %}
-  </div> 
-</div>
-  
+        </div> 
+    </div>
    
 {% endblock %}
 
 
 {% block page_js %}
-  {{ block.super }}
-  <script type="text/javascript">
-    var current_obj = false;
-    $(document).on('click', '.like-btn', function(e){
-      e.preventDefault();
-      
-      var post_id = $(this).data('post_id');
-      current_obj = $(this);
-      $.ajax({
-        type: "GET",
-        url: 'likepost/'+post_id+'',
-        // data : {'post_id' : parseInt(post_id)},
-        success:function(response) {
-          current_obj.html("<span class='glyphicon glyphicon-thumbs-up'></span>"+response.likes+" Likes")
-          swal(response.message)  
-        },
-        error:function(response) {
-        
-        }
-      });
-    })
-
-    // $(document).on('click', '#submit', function(e){
-    //   e.preventDefault();
-      
-    //   //var post_id = $(this).data('post_id');
-    //   current_obj = $(this);
-    //   $.ajax({
-    //     type: "GET",
-    //     url: '/',
-    //     // data : {'post_id' : parseInt(post_id)},
-    //     success:function(response) {
-    //       alert(response.message)  
-    //     },
-    //     error:function(response) {
-        
-    //     }
-    //   });
-    // })
-    
+    {{ block.super }}
+    <script type="text/javascript">
+        var current_obj = false;
+        $(document).on('click', '.like-btn', function(e){
+            e.preventDefault();
+          
+            var post_id = $(this).data('post_id');
+            current_obj = $(this);
+            $.ajax({
+                type: "GET",
+                url: 'likepost/'+post_id+'',
+                success:function(response) {
+                    current_obj.html("<span class='glyphicon glyphicon-thumbs-up'></span>"+response.likes+" Likes")
+                    swal(response.message)  
+                },
+            error:function(response) {
+            
+            }
+          });
+        })
     </script>
 
-  {% endblock %}
+{% endblock %}
 
 
 
-<!-- {% for latcomment in post.comment_set.all|slice:":3"%}
-         <div class="comment">
-         <strong style="color:  #5b331c ">{{latcomment.author.username }}</strong><br>
-         {{latcomment.comment}}<br>
-         <a href="{% url 'blog:likecomment' latcomment.id%}"><span class="glyphicon glyphicon-thumbs-up"></span>{{latcomment.likes}}Like</a></div>
-         <br>
-      {% endfor %}
-      {% if post.comment_set.all %}
-        <a href="{% url 'blog:showallcomment' post.id %}">Show All</a><br>
-      {% endif %} -->

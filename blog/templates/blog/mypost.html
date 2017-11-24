@@ -1,45 +1,46 @@
 {% extends 'blog/base.html' %}
 
-{% block title %}My Post{% endblock %}
+{% block title %}{{title}}{% endblock %}
 
 {% block content %}
-  {% if request.user.profile.blogger == True %}
-      <ul>
-        {% for post in latest_posts %}
-          <div class="post">{{ post.post|safe}}</div>
-          <a href="{% url 'blog:updatepost' post.slug %}"><span class="glyphicon glyphicon-edit"></span> Update</a>
-          <a href="{% url 'blog:deletepost' post.id %}"><span class="glyphicon glyphicon-trash"></span> Delete</a>
-          {% if post.publish == False or post.published > cur_date %}
-            <a href="{% url 'blog:publishpost' post.id %}"><span class="glyphicon glyphicon-check"></span> Publish</a>
-          {% else %}
-            <a href="{% url 'blog:unpublishpost' post.id %}"><span class="glyphicon glyphicon-unchecked"></span>UnPublish</a>
-          {% endif %}
-          <a href="{% url 'blog:commentonmypost' post.slug %}"><span class="glyphicon glyphicon-th-list"></span> Comments</a>
-          <a href="{% url 'blog:archivepost' post.slug %}"><span class="glyphicon glyphicon-briefcase"></span> Archive</a>
-        {% endfor %}
-        
-      </ul>
-  {% endif %}
+    {% if request.user.profile.blogger == True %}
+        <ul>
+            {% for post in post_list %}
+                <div class="post"><a href="{{ post.get_absolute_url }}">{{ post.post|safe}}</a></div>
+                <a href="{% url 'blog:updatepost' post.slug %}"><span class="glyphicon glyphicon-edit"></span> Update</a>
+                <a href="{% url 'blog:deletepost' post.slug %}"><span class="glyphicon glyphicon-trash"></span> Delete</a>
+                {% if post.publish == False or post.published > cur_date %}
+                    <a href="{% url 'blog:publishpost' post.slug %}"><span class="glyphicon glyphicon-check"></span> Publish</a>
+                {% else %}
+                    <a href="{% url 'blog:unpublishpost' post.slug %}"><span class="glyphicon glyphicon-unchecked"></span>UnPublish</a>
+                {% endif %}
+                <a href="{% url 'blog:commentonmypost' post.slug %}"><span class="glyphicon glyphicon-th-list"></span> Comments</a>
+                <a href="{% url 'blog:archivepost' post.slug %}"><span class="glyphicon glyphicon-briefcase"></span> Archive</a>
+            {% endfor %}
+        </ul>
 
-  {% if latest_posts.has_other_pages %}
-      {% if latest_posts.has_previous %}
-        <a href="?page={{ latest_post.previous_page_number }}">&laquo;</a>
-      {% else %}
-        <span>&laquo;</span>
-      {% endif %}
-      {% for i in latest_posts.paginator.page_range %}
-        {% if latest_post.number == i %}
-          <span>{{ i }} <span >(current)</span></span>
-        {% else %}
-          <a href="?page={{ i }}">{{ i }}</a>
+        {% if is_paginated %}
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                    <li><a href="?page={{ page_obj.previous_page_number }}">&laquo;</a></li>
+                {% else %}
+                    <li class="disabled"><span>&laquo;</span></li>
+                {% endif %}
+                {% for i in paginator.page_range %}
+                    {% if page_obj.number == i %}
+                        <li class="active"><span>{{ i }} <span class="sr-only">(current)</span></span></li>
+                    {% else %}
+                        <li><a href="?page={{ i }}">{{ i }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                {% if page_obj.has_next %}
+                    <li><a href="?page={{ page_obj.next_page_number }}">&raquo;</a></li>
+                {% else %}
+                    <li class="disabled"><span>&raquo;</span></li>
+                {% endif %}
+            </ul>
         {% endif %}
-      {% endfor %}
-      {% if latest_posts.has_next %}
-        <a href="?page={{ latest_posts.next_page_number }}">&raquo;</a>
-      {% else %}
-        <span>&raquo;</span>
-      {% endif %}
-  {% endif %}
-  
+    {% endif %}
+
 {% endblock %}
 
