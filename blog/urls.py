@@ -4,7 +4,8 @@ from django.views.generic import TemplateView
 from . import views
 from blog.views import CreatePostView, ShowPostView, IndexView, UserUpdateView, MyPostView, \
 UpdatePostView, MyPublishPostView, MyUnPublishPostView, MyArchivePostView, DeletePostView, \
-MakePostPublishView, MakePostUnpublishView, MakePostArchieveView, NotificationView
+MakePostPublishView, MakePostUnpublishView, MakePostArchieveView, NotificationView, \
+CommentOnMyPostView, DeleteCommentView, BecomeBloggerView, CreateCommentView
 
 urlpatterns = [
   url(r'^$',IndexView.as_view(), name = 'index'),
@@ -19,24 +20,18 @@ urlpatterns = [
   url(r'^publishpost/(?P<slug>[\w\-]+)/$',login_required(MakePostPublishView.as_view()), name='publishpost'),
   url(r'^unpublishpost/(?P<slug>[\w\-]+)/$',login_required(MakePostUnpublishView.as_view()), name='unpublishpost'),
   url(r'^archivepost/(?P<slug>[\w\-]+)/$', login_required(MakePostArchieveView.as_view()), name='archivepost'),
+  url(r'^notifications/$', NotificationView.as_view(), name='notifications'),
+  url(r'^viewpost/(?P<slug>[\w\-]+)/$', ShowPostView.as_view(), name='viewpost'),
+  url(r'^commentonmypost/(?P<slug>[\w\-]+)/$', CommentOnMyPostView.as_view(), name='commentonmypost'),
+  url(r'^deletepost/(?P<slug>[\w\-]+)/$',login_required(DeletePostView.as_view()), name='deletepost'),
+  url(r'^deletecomment/(?P<c_id>[0-9]+)/$', login_required(DeleteCommentView.as_view()), name='deletecomment'),
+  url(r'^becomeblogger/$', BecomeBloggerView.as_view(), name='becomeblogger'),
+  url(r'^createcomment/(?P<slug>[\w\-]+)/$', login_required(CreateCommentView.as_view()), name='createcomment'),
 
-  # url(r'^deletepost/(?P<slug>[\w\-]+)/$',login_required(DeletePostView.as_view()), name='deletepost'),
-  url(r'^deletepost/(?P<slug>[\w\-]+)/$',views.delete_post_view, name='deletepost'),
-
-
-  url(r'^createcomment/(?P<slug>[\w\-]+)/$', views.create_comment_view, name='createcomment'),
+  
   url(r'^viewpost/(?P<slug>[\w\-]+)/likepost/$', views.like_post_view, name='likepost'),
   url(r'^viewpost/(?P<slug>[\w\-]+)/likecomment/(?P<c_id>[0-9]+)/$', views.like_comment_view, name='likecomment'),
-  url(r'^commentonmypost/(?P<slug>[\w\-]+)/$', views.comments_on_my_post_view, name='commentonmypost'),
-  # url(r'^commentonmypost/(?P<slug>[\w\-]+)/$', CommentOnMyPostView.as_view(), name='commentonmypost'),
 
-
-  url(r'^deletecomment/(?P<c_id>[0-9]+)/$', views.delete_comment_view, name='deletecomment'),
-
-
-  url(r'^viewpost/(?P<slug>[\w\-]+)/$', ShowPostView.as_view(), name='viewpost'),
-  url(r'^becomeblogger/$', views.become_blogger_view, name='becomeblogger'),
-  url(r'^notifications/$', NotificationView.as_view(), name='notifications'),
 
 
   url(r'^paginateupper/$', views.ajax_upper_paginate_view, name='paginateupper'),
@@ -46,8 +41,4 @@ urlpatterns = [
   url(r'^searchpostajax/$', views.search_post_ajax_view, name='searchpostajax'),
   
   # url(r'^showallcomments/(?P<c_id>[0-9]+)/$', views.show_all_comments_view, name='showallcomment'),
-  # url(r'^mostviewedpost/$', views.most_viewed_post_view, name='mostviewedpost'),
-  # url(r'^mostlikedpost/$', views.most_liked_post_view, name='mostlikedpost'),
-
-
 ]

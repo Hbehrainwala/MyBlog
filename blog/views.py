@@ -146,18 +146,11 @@ class UpdatePostView(UpdateView):
         return super(UpdatePostView, self).dispatch(request, *args, **kwargs)
 
 
-@login_required
-def delete_post_view(request,c_id):
-    post = get_object_or_404(Post, id=c_id)
-    post.delete()
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
-
-class DeletePostView(DeleteView):
-    models = Post
-    success_url = reverse_lazy('blog:mypost') 
-
-    def get_object(self):
-        return Post.objects.get(slug=self.kwargs['slug'])
+class DeletePostView(View):
+    def get(self, request, slug):
+        post = get_object_or_404(Post, slug=slug)
+        post.delete()
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 
 class MakePostPublishView(View):
@@ -177,28 +170,31 @@ class MakePostUnpublishView(View):
         return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
   
-@login_required
-def create_comment_view(request, slug):
-    instance = get_object_or_404(Post, slug=slug)
-    if instance.user.profile.notify:
-        user = User.objects.get(id=request.user.id)
-        sender = instance.user.email  
-        email = EmailMessage('Notification For Comment', "User "+user.username+" Commented on Your Post " , to=[sender])
-        email.send()
+class CreateCommentView(FormView):
+    template_name = 'blog/createcomment.html'
+    form_class = CommentForm
 
+    def get_context_data(self, **kwargs):
+        context = super(CreateCommentView, self).get_context_data(**kwargs)
+        context['instance'] = Post.objects.get(slug = self.kwargs['slug'])
+        return context
 
-    if request.method == "POST":
-        form = CommentForm(request.POST)
-        if form.is_valid():
-            f = form.save()
-            f.posts = instance
-            f.author = request.user
-            f.save()
-        return HttpResponseRedirect(reverse('blog:viewpost', kwargs={'slug': slug}))
-    
-    else:
-        form = CommentForm(instance=instance) 
-        return render(request, 'blog/createcomment.html', {'form': form, 'instance':instance})
+    def form_valid(self, form):
+        instance = get_object_or_404(Post, slug=self.kwargs['slug'])
+        if instance.user.profile.notify:
+            user = User.objects.get(id=self.request.user.id)
+            sender = instance.user.email  
+            email = EmailMessage('Notification For Comment', "User "+user.username+" Commented on Your Post " , to=[sender])
+            email.send()
+        f = form.save(commit=False)
+        f.posts = instance
+        f.author = self.request.user
+        f.save()
+        return super(CreateCommentView, self).form_valid(form)
+
+    def get_success_url(self):
+        return reverse('blog:viewpost', kwargs={'slug': self.kwargs['slug']})
+
 
 def like_post_view(request, slug):
     post = get_object_or_404(Post, slug=slug)
@@ -241,34 +237,25 @@ def like_comment_view(request, slug,c_id):
         data = {"message":'You Need to Login First!!!',"likes":comment.likes}
         return HttpResponse(json.dumps(data), content_type="application/json")
 
-
-
  
-def comments_on_my_post_view(request,slug):
-    post = get_object_or_404(Post, slug = slug)
-    latest_comment=post.comment_set.all()
-    paginator = Paginator(latest_comment, 5)
-    page = request.GET.get('page')
-  
-    try:    
-        latest_comment = paginator.page(page)
-    except PageNotAnInteger:
-        latest_comment = paginator.page(1)
-    except EmptyPage:
-        latest_comment = paginator.page(paginator.num_pages)
-
-    return render(request, 'blog/mypostcomment.html', { 'latest_comment' : latest_comment,'post':post})
-
-#TODO
 class CommentOnMyPostView(ListView):
-    pass
+    template_name = 'blog/mypostcomment.html'
+    paginate_by = 3
 
+    def get_context_data(self, **kwargs):
+        context = super(CommentOnMyPostView, self).get_context_data(**kwargs)
+        context['post'] = Post.objects.get(slug=self.kwargs['slug'])
+        return context
 
+    def get_queryset(self):
+        return Post.objects.get(slug=self.kwargs['slug']).comment_set.all()
 
-def delete_comment_view(request,c_id):
-    comment = get_object_or_404(Comment, id=c_id)
-    comment.delete()
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+class DeleteCommentView(View):
+
+    def get(self,request, c_id):
+        comment = get_object_or_404(Comment, id=c_id)
+        comment.delete()
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 
 class MyPublishPostView(PaginationMixin, ListView):
@@ -325,6 +312,7 @@ class MakePostArchieveView(View):
         post.save() 
         return HttpResponseRedirect(request.META.get('HTTP_REFERER'))        
 
+
 class ShowPostView(DetailView):
     template_name = 'blog/viewpost.html'
     model = Post
@@ -345,61 +333,22 @@ class ShowPostView(DetailView):
 
         return context
 
-# def most_viewed_post_view(request):
-#   latest_posts=Post.objects.filter(publish=True, published__lte=datetime.datetime.now(), archive=False).order_by('-views')
-#   paginator = Paginator(latest_posts, 5)
-#   page = request.GET.get('page')
-  
-#   try:
-#     latest_posts = paginator.page(page)
-#   except PageNotAnInteger:
-#     latest_posts = paginator.page(1)
-#   except EmptyPage:
-#     latest_posts = paginator.page(paginator.num_pages)
 
-#   return render(request, 'blog/homepage.html', { 'latest_posts' : latest_posts})
+class BecomeBloggerView(View):
+    def get(self, request, *args, **kwargs):
+        user = User.objects.get(id=request.user.id)
+        if request.user.profile.request:
+            return HttpResponseRedirect(reverse('blog:index'))
 
-# def most_liked_post_view(request):
-#   latest_posts=Post.objects.filter(publish=True, published__lte=datetime.datetime.now(), archive=False).order_by('-likes')
-#   paginator = Paginator(latest_posts, 5)
-#   page = request.GET.get('page')
-  
-#   try:
-#     latest_posts = paginator.page(page)
-#   except PageNotAnInteger:
-#     latest_posts = paginator.page(1)
-#   except EmptyPage:
-#     latest_posts = paginator.page(paginator.num_pages)
+        else:
+            admin = settings.ADMIN_EMAIL
+            user.profile.request = True  
+            user.save()
+            email = EmailMessage('Request for blogger', "User "+user.username+" wants to become blogger" , to=[admin])
+            email.send()
+            return HttpResponseRedirect(reverse('blog:index'))
 
-#   return render(request, 'blog/homepage.html', { 'latest_posts' : latest_posts})
 
-def become_blogger_view(request):
-    user = User.objects.get(id=request.user.id)
-  
-    if request.user.profile.request:
-        return HttpResponseRedirect(reverse('blog:index'))
-
-    else:
-        admin = settings.ADMIN_EMAIL
-        user.profile.request = True  
-        user.save()
-        email = EmailMessage('Request for blogger', "User "+user.username+" wants to become blogger" , to=[admin])
-        email.send()
-        return HttpResponseRedirect(reverse('blog:index'))
-
-# def notifications_view(request):
-#     user = User.objects.get(id=request.user.id)
-#     if request.method == "POST":
-#         form = NotificationForm(request.POST, instance=request.user)
-#         if form.is_valid():
-#             f = form.save()
-#             f.profile.notify = True
-#             f.profile.save()
-#             return HttpResponseRedirect(reverse('blog:index'))
-    
-#     else:
-#         form = NotificationForm() 
-#         return render(request, 'blog/notifyuser.html', {'form':form})
   
 class NotificationView(UpdateView):
     form_class = NotificationForm
